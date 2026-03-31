@@ -36,4 +36,19 @@ describe("ENCAR English normalization", () => {
       displayTitle: "Mercedes-Benz E-Class W213 E300 Avantgarde Intelligent Drive",
     });
   });
+
+  it("normalizes common imported transliterations", () => {
+    expect(
+      normalizeVehicleLabels({
+        make: "\uD3EC\uB4DC",
+        model: "\uBA38\uC2A4\uD0F1 7\uC138\uB300 2.3 \uC5D0\uCF54\uBD80\uC2A4\uD2B8 \uD504\uB9AC\uBBF8\uC5C4 \uCEE8\uBC84\uD130\uBE14",
+        title: "\uD3EC\uB4DC \uBA38\uC2A4\uD0F1 7\uC138\uB300 2.3 \uC5D0\uCF54\uBD80\uC2A4\uD2B8 \uD504\uB9AC\uBBF8\uC5C4 \uCEE8\uBC84\uD130\uBE14",
+      }),
+    ).toMatchObject({
+      displayMake: "Ford",
+      displayModel: "Mustang 7th Generation 2.3 EcoBoost Premium Convertible",
+      displayTitle: "Ford Mustang 7th Generation 2.3 EcoBoost Premium Convertible",
+    });
+  });
+
 });
