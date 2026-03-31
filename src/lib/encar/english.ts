@@ -63,6 +63,8 @@ const MAKE_MAP = new Map<string, string>([
   ["\uC30D\uC6A9", "SsangYong"],
   ["\uCF00\uC774\uC9C0\uBAA8\uBE4C\uB9AC\uD2F0", "KG Mobility"],
   ["\uCF00\uC774\uC9C0\uBAA8\uBE4C\uB9AC\uD2F0(\uC30D\uC6A9)", "KG Mobility (SsangYong)"],
+  ["KG\uBAA8\uBE4C\uB9AC\uD2F0", "KG Mobility"],
+  ["KG\uBAA8\uBE4C\uB9AC\uD2F0(\uC30D\uC6A9)", "KG Mobility (SsangYong)"],
 ]);
 
 const PHRASE_REPLACEMENTS: Array<[string, string]> = [];
