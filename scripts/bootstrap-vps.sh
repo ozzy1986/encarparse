@@ -20,7 +20,7 @@ APP_DOMAIN="${APP_DOMAIN:-encarparse.ozzy1986.com}"
 REMOTE="${SSH_USER}@${SSH_HOST}"
 GIT_REMOTE_URL="${GIT_REMOTE_URL:-https://github.com/ozzy1986/encarparse.git}"
 
-ssh -p "$SSH_PORT" "$REMOTE" "set -euo pipefail; mkdir -p '$APP_DIR'; if [ ! -d '$APP_DIR/.git' ]; then git clone '$GIT_REMOTE_URL' '$APP_DIR'; fi"
+ssh -p "$SSH_PORT" "$REMOTE" "set -euo pipefail; mkdir -p '$APP_DIR'; cd '$APP_DIR'; if [ ! -d .git ]; then git init -b main; fi; if ! git remote get-url origin >/dev/null 2>&1; then git remote add origin '$GIT_REMOTE_URL'; fi; git fetch origin main; if ! git rev-parse --verify main >/dev/null 2>&1; then git checkout -t origin/main; else git checkout main; git pull --ff-only origin main; fi"
 
 scp -P "$SSH_PORT" "$ROOT_DIR/infra/nginx/encarparse.ozzy1986.com.conf" "$REMOTE:/etc/nginx/sites-available/${APP_DOMAIN}.conf"
 scp -P "$SSH_PORT" "$ROOT_DIR/infra/cron/encarparse-daily" "$REMOTE:/etc/cron.d/encarparse-daily"

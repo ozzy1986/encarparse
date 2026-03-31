@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 enum ScrapeStatus {
@@ -17,7 +17,7 @@ model Car {
   id            String   @id @default(cuid())
   source        String   @default("encar")
   sourceId      String
-  sourceUrl     String   @db.Text
+  sourceUrl     String
   category      String?
   make          String
   model         String
@@ -26,7 +26,7 @@ model Car {
   mileageKm     Int
   priceKrw      Int
   currency      String   @default("KRW")
-  photoUrl      String?  @db.Text
+  photoUrl      String?
   isActive      Boolean  @default(true)
   firstSeenAt   DateTime @default(now())
   lastSeenAt    DateTime @default(now())
@@ -50,7 +50,7 @@ model ScrapeRun {
   discoveredCount  Int          @default(0)
   upsertedCount    Int          @default(0)
   deactivatedCount Int          @default(0)
-  error            String?      @db.Text
+  error            String?
   metadata         Json?
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt

@@ -32,6 +32,6 @@ fi
 
 git push origin main
 
-ssh -p "$SSH_PORT" "$REMOTE" "set -euo pipefail; mkdir -p '$APP_DIR'; if [ ! -d '$APP_DIR/.git' ]; then git clone '$GIT_REMOTE_URL' '$APP_DIR'; fi; cd '$APP_DIR'; git checkout main; git pull --ff-only origin main; docker compose build app; docker compose up -d db; docker compose run --rm app npx prisma migrate deploy; docker compose up -d app; docker compose ps"
+ssh -p "$SSH_PORT" "$REMOTE" "set -euo pipefail; mkdir -p '$APP_DIR'; cd '$APP_DIR'; if [ ! -d .git ]; then git init -b main; fi; if ! git remote get-url origin >/dev/null 2>&1; then git remote add origin '$GIT_REMOTE_URL'; fi; git fetch origin main; if ! git rev-parse --verify main >/dev/null 2>&1; then git checkout -t origin/main; else git checkout main; git pull --ff-only origin main; fi; npm ci; npx prisma migrate deploy; npm run build; if pm2 describe encarparse >/dev/null 2>&1; then pm2 restart encarparse --update-env; else pm2 start ecosystem.config.cjs --only encarparse; fi; pm2 save"
 
 echo "VPS deploy complete."

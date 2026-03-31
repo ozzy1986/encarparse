@@ -1460,7 +1460,6 @@ export type CarCreateManyArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    * The data used to create many Cars.
    */
   data: Prisma.CarCreateManyInput | Prisma.CarCreateManyInput[]
-  skipDuplicates?: boolean
 }
 
 /**
@@ -1479,7 +1478,6 @@ export type CarCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions.
    * The data used to create many Cars.
    */
   data: Prisma.CarCreateManyInput | Prisma.CarCreateManyInput[]
-  skipDuplicates?: boolean
 }
 
 /**

@@ -1242,7 +1242,6 @@ export type ScrapeRunCreateManyArgs<ExtArgs extends runtime.Types.Extensions.Int
    * The data used to create many ScrapeRuns.
    */
   data: Prisma.ScrapeRunCreateManyInput | Prisma.ScrapeRunCreateManyInput[]
-  skipDuplicates?: boolean
 }
 
 /**
@@ -1261,7 +1260,6 @@ export type ScrapeRunCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Exten
    * The data used to create many ScrapeRuns.
    */
   data: Prisma.ScrapeRunCreateManyInput | Prisma.ScrapeRunCreateManyInput[]
-  skipDuplicates?: boolean
 }
 
 /**

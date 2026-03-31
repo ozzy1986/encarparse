@@ -1,7 +1,9 @@
 import { z } from "zod";
 
+export const DEFAULT_DATABASE_URL = "file:./prisma/encar.db";
+
 const serverEnvSchema = z.object({
-  DATABASE_URL: z.string().min(1, "DATABASE_URL is required."),
+  DATABASE_URL: z.string().min(1).optional(),
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
   SCRAPE_MAX_PAGES_PER_CATEGORY: z.coerce.number().int().positive().optional(),
   SCRAPE_PAGE_LIMIT: z.coerce.number().int().positive().optional(),
@@ -19,4 +21,8 @@ export function getServerEnv() {
   }
 
   return cachedEnv;
+}
+
+export function getDatabaseUrl() {
+  return getServerEnv().DATABASE_URL?.trim() || DEFAULT_DATABASE_URL;
 }
