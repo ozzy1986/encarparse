@@ -12,6 +12,8 @@ import {
 describe("ENCAR parser helpers", () => {
   it("parses Korean price formats", () => {
     expect(parsePriceKrw("3,250 \uB9CC\uC6D0")).toBe(32_500_000);
+    expect(parsePriceKrw("1\uC5B56800\uB9CC\uC6D0")).toBe(168_000_000);
+    expect(parsePriceKrw("1\uC5B56,800")).toBe(168_000_000);
     expect(parsePriceKrw("\u20A942,300,000")).toBe(42_300_000);
     expect(parsePriceKrw(3250)).toBe(32_500_000);
   });

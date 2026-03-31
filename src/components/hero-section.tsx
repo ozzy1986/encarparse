@@ -36,43 +36,38 @@ export function HeroSection({ featuredMakes, previewCar, stats }: HeroSectionPro
         <header className="flex items-center justify-between gap-4 border-b border-white/10 pb-5">
           <div>
             <p className="text-xs uppercase tracking-[0.35em] text-white/60">ENCARPARSE</p>
-            <p className="mt-2 text-lg font-semibold">Premium ENCAR vehicle sourcing</p>
+            <p className="mt-2 text-lg font-semibold">Daily ENCAR vehicle catalog in English</p>
           </div>
           <nav className="hidden items-center gap-7 text-sm text-white/70 md:flex">
             <a className="transition hover:text-white" href="#inventory">
-              Cars
-            </a>
-            <a className="transition hover:text-white" href="#services">
-              Services
+              Inventory
             </a>
             <a className="transition hover:text-white" href="#about">
-              About Us
+              About
+            </a>
+            <a className="transition hover:text-white" href="#services">
+              Catalog tools
             </a>
           </nav>
-          <div className="flex items-center gap-3">
-            <span className="hidden rounded-full border border-white/15 px-3 py-1 text-xs uppercase tracking-[0.22em] text-white/65 sm:inline-flex">
-              KRW
-            </span>
-            <a
-              className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#111827] transition hover:bg-[#f6e8d8]"
-              href="#inventory"
-            >
-              Contact us
-              <ChevronRight className="size-4" />
-            </a>
-          </div>
+          <a
+            className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#111827] transition hover:bg-[#f6e8d8]"
+            href="#inventory"
+          >
+            Latest arrivals
+            <ChevronRight className="size-4" />
+          </a>
         </header>
 
         <div className="grid gap-12 pt-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(350px,0.95fr)] lg:items-end">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#d5b48b]/30 bg-[#d5b48b]/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-[#f5d7b3]">
-              Daily synced from ENCAR
+              Updated daily from ENCAR
             </div>
             <h1 className="mt-8 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-[4.5rem] lg:leading-[0.98]">
-              Premium service for the search and delivery of ENCAR vehicles.
+              Premium used-car browsing with clean English presentation.
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-white/70 sm:text-lg">
-              A more editorial, filter-first catalog inspired by <a className="underline decoration-white/20 underline-offset-4 hover:text-white" href="https://millionmiles.ae/" rel="noreferrer" target="_blank">Million Miles</a>, with daily updates, source-backed listings, and a luxury dealership browsing rhythm.
+              Search, compare, and review vehicles sourced daily from ENCAR in a cleaner catalog experience with direct links back to every original listing.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -85,27 +80,29 @@ export function HeroSection({ featuredMakes, previewCar, stats }: HeroSectionPro
               </a>
               <a
                 className="inline-flex items-center justify-center rounded-full border border-white/15 px-6 py-3 text-sm font-medium text-white transition hover:border-white/30 hover:bg-white/5"
-                href="#order"
+                href="https://www.encar.com/"
+                rel="noreferrer"
+                target="_blank"
               >
-                Order a car
+                Open ENCAR marketplace
               </a>
             </div>
 
             <div className="mt-12 grid gap-4 border-t border-white/10 pt-8 sm:grid-cols-3">
               <div>
                 <p className="text-3xl font-semibold text-white sm:text-4xl">{formatHeroCount(stats.totalCars)}</p>
-                <p className="mt-2 text-sm uppercase tracking-[0.18em] text-white/50">Cars synced</p>
+                <p className="mt-2 text-sm uppercase tracking-[0.18em] text-white/50">Active cars</p>
               </div>
               <div>
                 <p className="text-3xl font-semibold text-white sm:text-4xl">{formatHeroCount(stats.brandCount)}</p>
-                <p className="mt-2 text-sm uppercase tracking-[0.18em] text-white/50">Brands tracked</p>
+                <p className="mt-2 text-sm uppercase tracking-[0.18em] text-white/50">Brands available</p>
               </div>
               <div>
                 <div className="inline-flex items-center gap-2 text-white/80">
                   <Clock3 className="size-4 text-[#d4a66a]" />
                   <p className="text-xl font-semibold text-white sm:text-2xl">{formatUpdatedAt(stats.lastSyncedAt)}</p>
                 </div>
-                <p className="mt-2 text-sm uppercase tracking-[0.18em] text-white/50">Refresh cadence</p>
+                <p className="mt-2 text-sm uppercase tracking-[0.18em] text-white/50">Last sync</p>
               </div>
             </div>
 
@@ -137,7 +134,7 @@ export function HeroSection({ featuredMakes, previewCar, stats }: HeroSectionPro
                 <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-[#f1c48a]">
                   <span>{previewCar?.category ?? "Featured car"}</span>
                   <span className="h-1 w-1 rounded-full bg-white/30" />
-                  <span>Featured card</span>
+                  <span>Featured listing</span>
                 </div>
                 <div>
                   <h2 className="text-2xl font-semibold leading-tight text-white sm:text-3xl">

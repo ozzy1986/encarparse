@@ -201,13 +201,26 @@ export function parsePriceKrw(value: unknown): number | null {
   }
 
   const compact = text.replace(/\s+/g, "");
+
+  if (compact.includes("억")) {
+    const eokMatch = compact.match(/(?:(\d[\d,]*)억)?(?:(\d[\d,]*)(?:만원|만)?)?/);
+    if (eokMatch) {
+      const eokValue = eokMatch[1] ? Number(eokMatch[1].replace(/,/g, "")) : 0;
+      const manValue = eokMatch[2] ? Number(eokMatch[2].replace(/,/g, "")) : 0;
+      const total = eokValue * 100_000_000 + manValue * 10_000;
+      if (Number.isFinite(total) && total > 0) {
+        return total;
+      }
+    }
+  }
+
   const manwonMatch = compact.match(MANWON_PATTERN);
   if (manwonMatch) {
     const parsed = Number(manwonMatch[1].replace(/,/g, ""));
     return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed * 10_000) : null;
   }
 
-  const krwMatch = compact.match(/\u20A9?([\d,]+)/);
+  const krwMatch = compact.match(/₩?([\d,]+)/);
   if (!krwMatch) {
     return null;
   }
