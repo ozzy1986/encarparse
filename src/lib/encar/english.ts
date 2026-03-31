@@ -62,9 +62,11 @@ const MAKE_MAP = new Map<string, string>([
   ["\uB974\uB178\uC0BC\uC131", "Renault Samsung"],
   ["\uC30D\uC6A9", "SsangYong"],
   ["\uCF00\uC774\uC9C0\uBAA8\uBE4C\uB9AC\uD2F0", "KG Mobility"],
+  ["\uCF00\uC774\uC9C0\uBAA8\uBE4C\uB9AC\uD2F0(\uC30D\uC6A9)", "KG Mobility (SsangYong)"],
 ]);
 
 const PHRASE_REPLACEMENTS: Array<[string, string]> = [];
+const SOURCE_MAKE_KEYS = Array.from(MAKE_MAP.keys()).sort((left, right) => right.length - left.length);
 PHRASE_REPLACEMENTS.push(
   ["\uAC00\uC194\uB9B0+\uC804\uAE30", "Gasoline + Electric"],
   ["\uC778\uD154\uB9AC\uC804\uD2B8 \uB4DC\uB77C\uC774\uBE0C", "Intelligent Drive"],
@@ -84,6 +86,8 @@ PHRASE_REPLACEMENTS.push(
   ["\uC5D0\uBE44\uC5D0\uC774\uD130", "Aviator"],
   ["\uBE14\uB799\uB77C\uBCA8", "Black Label"],
   ["\uC774\uD2B8\uB860", "e-tron"],
+  ["E-\uD2B8\uB860", "E-tron"],
+  ["e-\uD2B8\uB860", "e-tron"],
   ["\uB974\uBE14\uB791", "Le Blanc"],
   ["\uB274", "New"],
   ["\uB808\uC778\uC9C0\uB85C\uBC84", "Range Rover"],
@@ -212,6 +216,17 @@ function normalizeDisplayText(value: string) {
   return cleanupDisplayText(capitalizeRomanizedWords(romanized));
 }
 
+function detectSourceMakeFromTitle(value: string) {
+  const normalized = normalizeWhitespace(value);
+  for (const sourceMake of SOURCE_MAKE_KEYS) {
+    if (normalized === sourceMake || normalized.startsWith(`${sourceMake} `) || normalized.startsWith(`${sourceMake}(`)) {
+      return sourceMake;
+    }
+  }
+
+  return null;
+}
+
 function replaceSourceMake(value: string, sourceMake: string, displayMake: string) {
   return sourceMake ? value.split(sourceMake).join(displayMake) : value;
 }
@@ -230,17 +245,18 @@ export function normalizeDisplayMake(sourceMake: string) {
 }
 
 export function normalizeVehicleLabels(source: SourceVehicleLabels): DisplayVehicleLabels {
-  const sourceMake = normalizeWhitespace(source.make);
-  const sourceModel = normalizeWhitespace(source.model);
   const sourceTitle = normalizeWhitespace(source.title);
+  const sourceMake = normalizeWhitespace(detectSourceMakeFromTitle(sourceTitle) ?? source.make);
+  const sourceModel = normalizeWhitespace(source.model);
   const displayMake = normalizeDisplayMake(sourceMake);
-  const displayModel = removeLeadingMake(
-    normalizeDisplayText(replaceSourceMake(sourceModel, sourceMake, displayMake)),
-    displayMake,
-  );
   const displayTitle = cleanupDisplayText(
     normalizeDisplayText(replaceSourceMake(sourceTitle, sourceMake, displayMake)),
   );
+  const displayModel =
+    removeLeadingMake(
+      normalizeDisplayText(replaceSourceMake(sourceModel, sourceMake, displayMake)),
+      displayMake,
+    ) || removeLeadingMake(displayTitle, displayMake);
 
   return {
     sourceMake,
