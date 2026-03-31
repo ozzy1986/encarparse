@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ScrapeStatus {
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+model Car {
+  id            String   @id @default(cuid())
+  source        String   @default("encar")
+  sourceId      String
+  sourceUrl     String   @db.Text
+  category      String?
+  make          String
+  model         String
+  title         String
+  year          Int
+  mileageKm     Int
+  priceKrw      Int
+  currency      String   @default("KRW")
+  photoUrl      String?  @db.Text
+  isActive      Boolean  @default(true)
+  firstSeenAt   DateTime @default(now())
+  lastSeenAt    DateTime @default(now())
+  raw           Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([source, sourceId])
+  @@index([isActive, lastSeenAt])
+  @@index([make, model])
+  @@index([year])
+  @@index([priceKrw])
+}
+
+model ScrapeRun {
+  id               String       @id @default(cuid())
+  source           String       @default("encar")
+  status           ScrapeStatus @default(RUNNING)
+  startedAt        DateTime     @default(now())
+  finishedAt       DateTime?
+  discoveredCount  Int          @default(0)
+  upsertedCount    Int          @default(0)
+  deactivatedCount Int          @default(0)
+  error            String?      @db.Text
+  metadata         Json?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([source, status, startedAt])
+}

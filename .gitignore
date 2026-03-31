@@ -1,0 +1,10 @@
+node_modules
+.next
+coverage
+dist
+.env
+.env.*
+.npm
+playwright-report
+test-results
+.DS_Store
