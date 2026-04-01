@@ -40,7 +40,7 @@ if (Test-Path (Join-Path $root ".git")) {
 }
 
 $remoteCmd = @"
-set -euo pipefail
+set -eu
 mkdir -p '$appDir'
 cd '$appDir'
 if [ ! -d .git ]; then git init -b main; fi
@@ -62,6 +62,9 @@ else
 fi
 pm2 save
 "@
+
+# PowerShell here-strings are CRLF on Windows; strip CR to avoid bash parsing issues.
+$remoteCmd = $remoteCmd -replace "`r", ""
 
 & ssh -p $sshPort $remote $remoteCmd
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
