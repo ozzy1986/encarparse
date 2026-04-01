@@ -9,6 +9,6 @@ dist
 *.db-*
 prisma/*.db
 prisma/*.db-*
-playwright-report
+logs
 test-results
 .DS_Store

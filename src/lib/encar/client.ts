@@ -1,3 +1,4 @@
+import type { Logger } from "../logger";
 import { delay } from "../utils";
 
 import { normalizeApiRecord } from "./parser";
@@ -16,6 +17,7 @@ export interface EncarScrapeOptions {
   requestDelayMs?: number;
   debug?: boolean;
   fullRefresh?: boolean;
+  logger?: Logger;
 }
 
 interface ResolvedOptions {
@@ -102,11 +104,14 @@ export interface EncarCategoryPage {
 export async function* scrapeEncarCategoryPages(options: EncarScrapeOptions = {}): AsyncGenerator<EncarCategoryPage> {
   const resolved = resolveOptions(options);
   const categories = selectedCategories(options.categories);
+  const log = options.logger;
 
   for (const category of categories) {
     let offset = 0;
     let pageIndex = 0;
     let totalCount = Number.POSITIVE_INFINITY;
+
+    log?.info(`[encar] starting category=${category.id} limit=${resolved.limitPerPage} maxPages=${resolved.maxPagesPerCategory}`);
 
     while (offset < totalCount && pageIndex < resolved.maxPagesPerCategory) {
       const payload = await fetchCategoryPage(category.id, offset, resolved.limitPerPage);
@@ -119,11 +124,9 @@ export async function* scrapeEncarCategoryPages(options: EncarScrapeOptions = {}
         .filter((item): item is EncarNormalizedListing => Boolean(item));
       const uniqueListings = dedupeListings(listings);
 
-      if (resolved.debug) {
-        console.info(
-          `[encar] ${category.id} offset=${offset} limit=${resolved.limitPerPage} got=${records.length} ok=${listings.length} unique=${uniqueListings.length} total=${totalCount}`,
-        );
-      }
+      log?.info(
+        `[encar] ${category.id} page=${pageIndex} offset=${offset} got=${records.length} parsed=${listings.length} unique=${uniqueListings.length} total=${totalCount}`,
+      );
 
       yield {
         categoryId: category.id,
@@ -144,5 +147,7 @@ export async function* scrapeEncarCategoryPages(options: EncarScrapeOptions = {}
 
       await delay(resolved.requestDelayMs);
     }
+
+    log?.info(`[encar] finished category=${category.id} pages=${pageIndex} discovered=${offset}`);
   }
 }

@@ -1,6 +1,7 @@
 import "dotenv/config";
 
 import { syncEncarListings } from "../src/lib/encar/sync";
+import { createScrapeLogger } from "../src/lib/logger";
 import type { EncarCategoryId } from "../src/lib/encar/types";
 
 function parseListArg(flag: string) {
@@ -27,22 +28,27 @@ function parseNumberArg(flag: string) {
 }
 
 async function main() {
+  const logger = createScrapeLogger("scrape");
   const categories = parseListArg("--categories") as EncarCategoryId[] | undefined;
   const debug = process.argv.includes("--debug");
   const maxPagesPerCategory = parseNumberArg("--max-pages");
   const limitPerPage = parseNumberArg("--limit");
   const fullRefresh = process.argv.includes("--full-refresh") || process.env.SCRAPE_FULL_REFRESH === "true";
 
-  const summary = await syncEncarListings({
-    categories,
-    debug,
-    maxPagesPerCategory,
-    limitPerPage,
-    fullRefresh,
-  });
+  try {
+    const summary = await syncEncarListings({
+      categories,
+      debug,
+      maxPagesPerCategory,
+      limitPerPage,
+      fullRefresh,
+      logger,
+    });
 
-  console.info("ENCAR sync completed.");
-  console.info(JSON.stringify(summary, null, 2));
+    logger.info("ENCAR sync completed: " + JSON.stringify(summary));
+  } finally {
+    logger.close();
+  }
 }
 
 main().catch((error) => {

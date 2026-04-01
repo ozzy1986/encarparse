@@ -210,9 +210,9 @@ export async function getHomepageData(
     cars: cars.map((car) => ({
       id: car.id,
       category: car.category,
-      make: car.makeDisplay || car.make,
-      model: car.modelDisplay || car.model,
-      title: car.titleDisplay || car.title,
+      make: car.makeDisplay || "—",
+      model: car.modelDisplay || "—",
+      title: car.titleDisplay || `${car.makeDisplay || ""} ${car.modelDisplay || ""}`.trim() || "—",
       year: car.year,
       mileageKm: car.mileageKm,
       priceKrw: car.priceKrw,

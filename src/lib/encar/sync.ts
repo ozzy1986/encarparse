@@ -1,5 +1,6 @@
 import { Prisma, ScrapeStatus } from "../../generated/prisma/client";
 import { getDb } from "../db";
+import type { Logger } from "../logger";
 
 import { normalizeVehicleLabels } from "./english";
 import { scrapeEncarCategoryPages, type EncarScrapeOptions } from "./client";
@@ -20,8 +21,9 @@ export interface EncarSyncSummary {
   }>;
 }
 
-export async function syncEncarListings(options: EncarScrapeOptions = {}): Promise<EncarSyncSummary> {
+export async function syncEncarListings(options: EncarScrapeOptions & { logger?: Logger } = {}): Promise<EncarSyncSummary> {
   const db = getDb();
+  const log = options.logger;
   const seenAt = new Date();
   const run = await db.scrapeRun.create({
     data: {
@@ -32,9 +34,12 @@ export async function syncEncarListings(options: EncarScrapeOptions = {}): Promi
     select: { id: true },
   });
 
+  log?.info(`[sync] run=${run.id} started fullRefresh=${options.fullRefresh ?? false}`);
+
   try {
     const fullRefresh = options.fullRefresh ?? process.env.SCRAPE_FULL_REFRESH === "true";
     if (fullRefresh) {
+      log?.info("[sync] full refresh: deleting all existing encar cars");
       await db.car.deleteMany({ where: { source: "encar" } });
     }
 
@@ -105,8 +110,6 @@ export async function syncEncarListings(options: EncarScrapeOptions = {}): Promi
 
       if (createRows.length > 0) {
         if (fullRefresh) {
-          // Full refresh: insert in bulk, but be resilient to occasional duplicates
-          // caused by offset-based pagination when listings shift during the run.
           try {
             await db.car.createMany({ data: createRows });
           } catch (error) {
@@ -115,7 +118,7 @@ export async function syncEncarListings(options: EncarScrapeOptions = {}): Promi
             if (!isUnique) {
               throw error;
             }
-
+            log?.warn(`[sync] createMany hit P2002 for ${createRows.length} rows, falling back to individual inserts`);
             for (const row of createRows) {
               try {
                 await db.car.create({ data: row as Prisma.CarCreateInput });
@@ -129,7 +132,6 @@ export async function syncEncarListings(options: EncarScrapeOptions = {}): Promi
             }
           }
         } else {
-          // Incremental sync: insert rows one-by-one to avoid createMany conflict aborts.
           for (const row of createRows) {
             await db.car.create({
               data: row as Prisma.CarCreateInput,
@@ -139,8 +141,6 @@ export async function syncEncarListings(options: EncarScrapeOptions = {}): Promi
         upsertedCount += createRows.length;
       }
 
-      // For duplicates (existing), update row-by-row.
-      // This keeps daily sync correct while keeping the initial full load fast.
       if (updateRows.length > 0) {
         const chunkSize = 50;
         for (let idx = 0; idx < updateRows.length; idx += chunkSize) {
@@ -161,6 +161,8 @@ export async function syncEncarListings(options: EncarScrapeOptions = {}): Promi
           upsertedCount += chunk.length;
         }
       }
+
+      log?.info(`[sync] page done: created=${createRows.length} updated=${updateRows.length} totalUpserted=${upsertedCount}`);
     }
 
     const deactivated = await db.car.updateMany({
@@ -193,6 +195,8 @@ export async function syncEncarListings(options: EncarScrapeOptions = {}): Promi
       },
     });
 
+    log?.info(`[sync] completed: discovered=${discoveredCount} upserted=${upsertedCount} deactivated=${deactivated.count}`);
+
     return {
       runId: run.id,
       discoveredCount,
@@ -205,6 +209,7 @@ export async function syncEncarListings(options: EncarScrapeOptions = {}): Promi
       })),
     };
   } catch (error) {
+    log?.error(`[sync] failed: ${error instanceof Error ? error.stack ?? error.message : String(error)}`);
     await db.scrapeRun.update({
       where: { id: run.id },
       data: {
