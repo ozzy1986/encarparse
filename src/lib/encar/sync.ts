@@ -46,6 +46,7 @@ export async function syncEncarListings(options: EncarScrapeOptions & { logger?:
     let discoveredCount = 0;
     let upsertedCount = 0;
     const categoryStats = new Map<string, { pageCount: number; discoveredCount: number }>();
+    const insertedIds = fullRefresh ? new Set<string>() : null;
 
     for await (const page of scrapeEncarCategoryPages(options)) {
       const stat = categoryStats.get(page.categoryId) ?? { pageCount: 0, discoveredCount: 0 };
@@ -100,6 +101,8 @@ export async function syncEncarListings(options: EncarScrapeOptions & { logger?:
 
         if (existingSet.has(listing.sourceId)) {
           updateRows.push(base);
+        } else if (insertedIds?.has(listing.sourceId)) {
+          // Cross-page duplicate during full refresh — skip silently
         } else {
           createRows.push({
             ...base,
@@ -110,32 +113,21 @@ export async function syncEncarListings(options: EncarScrapeOptions & { logger?:
 
       if (createRows.length > 0) {
         if (fullRefresh) {
-          try {
-            await db.car.createMany({ data: createRows });
-          } catch (error) {
-            const isUnique =
-              error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
-            if (!isUnique) {
-              throw error;
-            }
-            log?.warn(`[sync] createMany hit P2002 for ${createRows.length} rows, falling back to individual inserts`);
-            for (const row of createRows) {
-              try {
-                await db.car.create({ data: row as Prisma.CarCreateInput });
-              } catch (inner) {
-                const innerUnique =
-                  inner instanceof Prisma.PrismaClientKnownRequestError && inner.code === "P2002";
-                if (!innerUnique) {
-                  throw inner;
-                }
-              }
-            }
+          await db.car.createMany({ data: createRows });
+          for (const row of createRows) {
+            insertedIds?.add(row.sourceId);
           }
         } else {
           for (const row of createRows) {
-            await db.car.create({
-              data: row as Prisma.CarCreateInput,
-            });
+            try {
+              await db.car.create({ data: row as Prisma.CarCreateInput });
+            } catch (error) {
+              const isUnique =
+                error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+              if (!isUnique) {
+                throw error;
+              }
+            }
           }
         }
         upsertedCount += createRows.length;
