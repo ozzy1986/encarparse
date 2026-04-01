@@ -9,7 +9,7 @@ const globalForPrisma = globalThis as unknown as {
 
 export function getDb() {
   if (!globalForPrisma.prisma) {
-    const adapter = new PrismaBetterSqlite3({ url: getDatabaseUrl() });
+    const adapter = new PrismaBetterSqlite3({ url: getDatabaseUrl(), timeout: 30_000 });
     globalForPrisma.prisma = new PrismaClient({ adapter });
   }
 

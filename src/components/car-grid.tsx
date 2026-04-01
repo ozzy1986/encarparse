@@ -18,6 +18,8 @@ interface CarGridProps {
   makeCounts: MakeCount[];
   matchingCount: number;
   selectedFilters: HomePageSelectedFilters;
+  page: number;
+  pageCount: number;
 }
 
 function formatCountLabel(value: number) {
@@ -30,6 +32,8 @@ export function CarGrid({
   makeCounts,
   matchingCount,
   selectedFilters,
+  page,
+  pageCount,
 }: CarGridProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -37,6 +41,7 @@ export function CarGrid({
   const [model, setModel] = useState(selectedFilters.model);
   const [yearFrom, setYearFrom] = useState(selectedFilters.yearFrom);
   const [yearTo, setYearTo] = useState(selectedFilters.yearTo);
+  const pageSize = selectedFilters.pageSize;
 
   const allModels = useMemo(
     () =>
@@ -67,8 +72,34 @@ export function CarGrid({
     if (yearTo) {
       params.set("yearTo", yearTo);
     }
+    params.set("page", "1");
+    if (pageSize) {
+      params.set("pageSize", pageSize);
+    }
     const query = params.toString();
     router.push(query ? `${pathname}?${query}#inventory` : `${pathname}#inventory`);
+  }
+
+  function goToPage(nextPage: number) {
+    const safePage = Math.min(Math.max(1, Math.floor(nextPage)), Math.max(1, pageCount));
+    const params = new URLSearchParams();
+    if (selectedFilters.brand) {
+      params.set("brand", selectedFilters.brand);
+    }
+    if (selectedFilters.model) {
+      params.set("model", selectedFilters.model);
+    }
+    if (selectedFilters.yearFrom) {
+      params.set("yearFrom", selectedFilters.yearFrom);
+    }
+    if (selectedFilters.yearTo) {
+      params.set("yearTo", selectedFilters.yearTo);
+    }
+    params.set("page", String(safePage));
+    if (selectedFilters.pageSize) {
+      params.set("pageSize", selectedFilters.pageSize);
+    }
+    router.push(`${pathname}?${params.toString()}#inventory`);
   }
 
   function clearFilters() {
@@ -189,6 +220,29 @@ export function CarGrid({
               ? "No active listings match the current filters."
               : `Showing ${cars.length} cars on this page from ${matchingCount} matching active listings.`}
           </p>
+          {matchingCount > 0 ? (
+            <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+              <button
+                className="rounded-full border border-[#ddd2c3] bg-white px-4 py-2 text-sm font-medium text-[#5d5348] transition hover:border-[#c9b8a5] hover:bg-[#faf7f2] disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => goToPage(page - 1)}
+                type="button"
+                disabled={page <= 1}
+              >
+                Previous
+              </button>
+              <div className="rounded-full bg-[#f5efe8] px-4 py-2 text-sm font-medium text-[#5f554b]">
+                Page {page} of {pageCount}
+              </div>
+              <button
+                className="rounded-full border border-[#ddd2c3] bg-white px-4 py-2 text-sm font-medium text-[#5d5348] transition hover:border-[#c9b8a5] hover:bg-[#faf7f2] disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => goToPage(page + 1)}
+                type="button"
+                disabled={page >= pageCount}
+              >
+                Next
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -198,10 +252,24 @@ export function CarGrid({
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#b77a38]">Popular brands</p>
             <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
               {makeCounts.map((item) => (
-                <div key={item.make} className="flex items-baseline justify-between gap-4 border-b border-[#ece2d6] pb-3 last:border-b-0 last:pb-0">
-                  <span className="text-sm font-semibold uppercase tracking-[0.16em] text-[#1f1a16]">{item.make}</span>
+                <button
+                  key={item.make}
+                  type="button"
+                  className="flex w-full items-baseline justify-between gap-4 border-b border-[#ece2d6] pb-3 text-left transition hover:border-[#c9b8a5] last:border-b-0 last:pb-0"
+                  onClick={() => {
+                    setBrand(item.make);
+                    setModel("");
+                    setYearFrom("");
+                    setYearTo("");
+                    const params = new URLSearchParams();
+                    params.set("brand", item.make);
+                    params.set("page", "1");
+                    router.push(`${pathname}?${params.toString()}#inventory`);
+                  }}
+                >
+                  <span className="text-sm font-semibold uppercase tracking-[0.16em] text-[#1f1a16] transition group-hover:text-[#9a6531]">{item.make}</span>
                   <span className="text-sm text-[#8b7f72]">{formatCountLabel(item.count)}</span>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -214,9 +282,11 @@ export function CarGrid({
             </p>
             <a
               className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#f6c58f] transition hover:text-white"
-              href="#services"
+              href="https://www.encar.com/"
+              rel="noreferrer"
+              target="_blank"
             >
-              Explore catalog tools
+              Open ENCAR marketplace
               <ArrowRight className="size-4" />
             </a>
           </div>

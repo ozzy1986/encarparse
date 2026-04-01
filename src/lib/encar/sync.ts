@@ -1,7 +1,8 @@
 import { Prisma, ScrapeStatus } from "../../generated/prisma/client";
 import { getDb } from "../db";
 
-import { scrapeEncarListings, type EncarScrapeOptions } from "./client";
+import { normalizeVehicleLabels } from "./english";
+import { scrapeEncarCategoryPages, type EncarScrapeOptions } from "./client";
 
 function asJson(value: unknown) {
   return JSON.parse(JSON.stringify(value ?? null)) as Prisma.InputJsonValue;
@@ -32,18 +33,46 @@ export async function syncEncarListings(options: EncarScrapeOptions = {}): Promi
   });
 
   try {
-    const scraped = await scrapeEncarListings(options);
-    let upsertedCount = 0;
+    const fullRefresh = options.fullRefresh ?? process.env.SCRAPE_FULL_REFRESH === "true";
+    if (fullRefresh) {
+      await db.car.deleteMany({ where: { source: "encar" } });
+    }
 
-    for (const listing of scraped.listings) {
-      await db.car.upsert({
-        where: {
-          source_sourceId: {
-            source: "encar",
-            sourceId: listing.sourceId,
-          },
-        },
-        create: {
+    let discoveredCount = 0;
+    let upsertedCount = 0;
+    const categoryStats = new Map<string, { pageCount: number; discoveredCount: number }>();
+
+    for await (const page of scrapeEncarCategoryPages(options)) {
+      const stat = categoryStats.get(page.categoryId) ?? { pageCount: 0, discoveredCount: 0 };
+      stat.pageCount = Math.max(stat.pageCount, page.pageIndex + 1);
+      stat.discoveredCount += page.listings.length;
+      categoryStats.set(page.categoryId, stat);
+
+      discoveredCount += page.listings.length;
+
+      const existingSet = new Set<string>();
+      if (!fullRefresh) {
+        const sourceIds = page.listings.map((listing) => listing.sourceId);
+        const existing = await db.car.findMany({
+          where: { source: "encar", sourceId: { in: sourceIds } },
+          select: { sourceId: true },
+        });
+        for (const row of existing) {
+          existingSet.add(row.sourceId);
+        }
+      }
+
+      const createRows: Prisma.CarCreateManyInput[] = [];
+      const updateRows = [];
+
+      for (const listing of page.listings) {
+        const normalized = normalizeVehicleLabels({
+          make: listing.make,
+          model: listing.model,
+          title: listing.title,
+        });
+
+        const base = {
           source: "encar",
           sourceId: listing.sourceId,
           sourceUrl: listing.sourceUrl,
@@ -57,27 +86,81 @@ export async function syncEncarListings(options: EncarScrapeOptions = {}): Promi
           currency: "KRW",
           photoUrl: listing.photoUrl,
           isActive: true,
-          firstSeenAt: seenAt,
           lastSeenAt: seenAt,
           raw: asJson(listing.raw),
-        },
-        update: {
-          sourceUrl: listing.sourceUrl,
-          category: listing.categoryLabel,
-          make: listing.make,
-          model: listing.model,
-          title: listing.title,
-          year: listing.year,
-          mileageKm: listing.mileageKm,
-          priceKrw: listing.priceKrw,
-          currency: "KRW",
-          photoUrl: listing.photoUrl,
-          isActive: true,
-          lastSeenAt: seenAt,
-          raw: asJson(listing.raw),
-        },
-      });
-      upsertedCount += 1;
+          makeDisplay: normalized.displayMake,
+          modelDisplay: normalized.displayModel || normalized.displayTitle.replace(`${normalized.displayMake} `, ""),
+          titleDisplay: normalized.displayTitle,
+        } satisfies Omit<Prisma.CarCreateManyInput, "id" | "firstSeenAt" | "createdAt" | "updatedAt">;
+
+        if (existingSet.has(listing.sourceId)) {
+          updateRows.push(base);
+        } else {
+          createRows.push({
+            ...base,
+            firstSeenAt: seenAt,
+          });
+        }
+      }
+
+      if (createRows.length > 0) {
+        if (fullRefresh) {
+          // Full refresh: insert in bulk, but be resilient to occasional duplicates
+          // caused by offset-based pagination when listings shift during the run.
+          try {
+            await db.car.createMany({ data: createRows });
+          } catch (error) {
+            const isUnique =
+              error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+            if (!isUnique) {
+              throw error;
+            }
+
+            for (const row of createRows) {
+              try {
+                await db.car.create({ data: row as Prisma.CarCreateInput });
+              } catch (inner) {
+                const innerUnique =
+                  inner instanceof Prisma.PrismaClientKnownRequestError && inner.code === "P2002";
+                if (!innerUnique) {
+                  throw inner;
+                }
+              }
+            }
+          }
+        } else {
+          // Incremental sync: insert rows one-by-one to avoid createMany conflict aborts.
+          for (const row of createRows) {
+            await db.car.create({
+              data: row as Prisma.CarCreateInput,
+            });
+          }
+        }
+        upsertedCount += createRows.length;
+      }
+
+      // For duplicates (existing), update row-by-row.
+      // This keeps daily sync correct while keeping the initial full load fast.
+      if (updateRows.length > 0) {
+        const chunkSize = 50;
+        for (let idx = 0; idx < updateRows.length; idx += chunkSize) {
+          const chunk = updateRows.slice(idx, idx + chunkSize);
+          await db.$transaction(
+            chunk.map((row) =>
+              db.car.update({
+                where: {
+                  source_sourceId: {
+                    source: "encar",
+                    sourceId: row.sourceId,
+                  },
+                },
+                data: row,
+              }),
+            ),
+          );
+          upsertedCount += chunk.length;
+        }
+      }
     }
 
     const deactivated = await db.car.updateMany({
@@ -96,25 +179,29 @@ export async function syncEncarListings(options: EncarScrapeOptions = {}): Promi
       data: {
         status: ScrapeStatus.SUCCEEDED,
         finishedAt: new Date(),
-        discoveredCount: scraped.listings.length,
+        discoveredCount,
         upsertedCount,
         deactivatedCount: deactivated.count,
         metadata: asJson({
           options,
-          categories: scraped.categories,
+          categories: Array.from(categoryStats.entries()).map(([categoryId, stat]) => ({
+            categoryId,
+            pageCount: stat.pageCount,
+            discoveredCount: stat.discoveredCount,
+          })),
         }),
       },
     });
 
     return {
       runId: run.id,
-      discoveredCount: scraped.listings.length,
+      discoveredCount,
       upsertedCount,
       deactivatedCount: deactivated.count,
-      categories: scraped.categories.map((category) => ({
-        categoryId: category.categoryId,
-        pageCount: category.pageCount,
-        discoveredCount: category.discoveredCount,
+      categories: Array.from(categoryStats.entries()).map(([categoryId, stat]) => ({
+        categoryId,
+        pageCount: stat.pageCount,
+        discoveredCount: stat.discoveredCount,
       })),
     };
   } catch (error) {

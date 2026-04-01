@@ -42,11 +42,13 @@ export function HeroSection({ featuredMakes, previewCar, stats }: HeroSectionPro
             <a className="transition hover:text-white" href="#inventory">
               Inventory
             </a>
-            <a className="transition hover:text-white" href="#about">
-              About
-            </a>
-            <a className="transition hover:text-white" href="#services">
-              Catalog tools
+            <a
+              className="transition hover:text-white"
+              href="https://www.encar.com/"
+              rel="noreferrer"
+              target="_blank"
+            >
+              ENCAR source
             </a>
           </nav>
           <a

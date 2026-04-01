@@ -1,4 +1,11 @@
-import { ENCAR_CATEGORIES, ENCAR_BASE_URL, type EncarCategoryId, type EncarNormalizedListing } from "./types";
+import {
+  ENCAR_BASE_URL,
+  ENCAR_CATEGORIES,
+  ENCAR_IMAGE_BASE_URL,
+  type EncarApiRecord,
+  type EncarCategoryId,
+  type EncarNormalizedListing,
+} from "./types";
 
 type AnyRecord = Record<string, unknown>;
 
@@ -172,6 +179,31 @@ export function normalizePhotoUrl(value: string | null | undefined) {
   return trimmed;
 }
 
+function normalizeImageLocation(value: string | null | undefined) {
+  const normalized = normalizePhotoUrl(value);
+  if (!normalized) {
+    return null;
+  }
+
+  if (normalized.startsWith(`${ENCAR_BASE_URL}/carpicture`) || normalized.startsWith(`${ENCAR_IMAGE_BASE_URL}/carpicture`)) {
+    return normalized.replace(ENCAR_BASE_URL, ENCAR_IMAGE_BASE_URL);
+  }
+
+  if (normalized.startsWith("/carpicture")) {
+    return `${ENCAR_IMAGE_BASE_URL}${normalized}`;
+  }
+
+  return normalized;
+}
+
+function buildSourceUrl(categoryId: EncarCategoryId, sourceId: string) {
+  const category = ENCAR_CATEGORIES.find((item) => item.id === categoryId);
+  const detailPath = category?.detailPath ?? "/dc/dc_cardetailview.do";
+  const url = new URL(detailPath, ENCAR_BASE_URL);
+  url.searchParams.set("carid", sourceId);
+  return url.toString();
+}
+
 export function extractSourceIdFromUrl(url: string | null | undefined) {
   if (!url) {
     return null;
@@ -231,6 +263,62 @@ export function parsePriceKrw(value: unknown): number | null {
   }
 
   return parsed < 1_000_000 ? Math.round(parsed * 10_000) : parsed;
+}
+
+export function normalizeApiRecord(record: EncarApiRecord, categoryId: EncarCategoryId): EncarNormalizedListing | null {
+  const sourceId = typeof record.Id === "string" ? record.Id.trim() : "";
+  if (!sourceId) {
+    return null;
+  }
+
+  const make = typeof record.Manufacturer === "string" ? normalizeWhitespace(record.Manufacturer) : "";
+  const model = typeof record.Model === "string" ? normalizeWhitespace(record.Model) : "";
+  if (!make || !model) {
+    return null;
+  }
+
+  const badge = typeof record.Badge === "string" ? normalizeWhitespace(record.Badge) : "";
+  const badgeDetail = typeof record.BadgeDetail === "string" ? normalizeWhitespace(record.BadgeDetail) : "";
+
+  const year = parseYear(record.FormYear ?? record.Year);
+  const mileageKm = parseMileageKm(record.Mileage);
+  const priceKrw =
+    typeof record.Price === "number" && Number.isFinite(record.Price) && record.Price > 0
+      ? Math.round(record.Price * 10_000)
+      : parsePriceKrw(record.Price);
+
+  if (!year || !mileageKm || !priceKrw) {
+    return null;
+  }
+
+  const photos = Array.isArray(record.Photos) ? record.Photos : [];
+  const photoUrl =
+    normalizeImageLocation(photos[0]?.location) ??
+    normalizeImageLocation(typeof record.Photo === "string" ? `${record.Photo}001.jpg` : null) ??
+    null;
+
+  const title = buildTitle(
+    make,
+    model,
+    normalizeWhitespace(
+      [make, model, badge, badgeDetail].filter((value) => value && value !== "(세부등급 없음)").join(" "),
+    ),
+  );
+
+  return {
+    sourceId,
+    sourceUrl: buildSourceUrl(categoryId, sourceId),
+    categoryId,
+    categoryLabel: CATEGORY_LABELS[categoryId],
+    make,
+    model,
+    title,
+    year,
+    mileageKm,
+    priceKrw,
+    photoUrl,
+    raw: sanitizeRecord(record),
+  };
 }
 
 export function parseMileageKm(value: unknown): number | null {

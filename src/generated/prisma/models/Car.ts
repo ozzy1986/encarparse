@@ -47,6 +47,9 @@ export type CarMinAggregateOutputType = {
   make: string | null
   model: string | null
   title: string | null
+  makeDisplay: string | null
+  modelDisplay: string | null
+  titleDisplay: string | null
   year: number | null
   mileageKm: number | null
   priceKrw: number | null
@@ -68,6 +71,9 @@ export type CarMaxAggregateOutputType = {
   make: string | null
   model: string | null
   title: string | null
+  makeDisplay: string | null
+  modelDisplay: string | null
+  titleDisplay: string | null
   year: number | null
   mileageKm: number | null
   priceKrw: number | null
@@ -89,6 +95,9 @@ export type CarCountAggregateOutputType = {
   make: number
   model: number
   title: number
+  makeDisplay: number
+  modelDisplay: number
+  titleDisplay: number
   year: number
   mileageKm: number
   priceKrw: number
@@ -125,6 +134,9 @@ export type CarMinAggregateInputType = {
   make?: true
   model?: true
   title?: true
+  makeDisplay?: true
+  modelDisplay?: true
+  titleDisplay?: true
   year?: true
   mileageKm?: true
   priceKrw?: true
@@ -146,6 +158,9 @@ export type CarMaxAggregateInputType = {
   make?: true
   model?: true
   title?: true
+  makeDisplay?: true
+  modelDisplay?: true
+  titleDisplay?: true
   year?: true
   mileageKm?: true
   priceKrw?: true
@@ -167,6 +182,9 @@ export type CarCountAggregateInputType = {
   make?: true
   model?: true
   title?: true
+  makeDisplay?: true
+  modelDisplay?: true
+  titleDisplay?: true
   year?: true
   mileageKm?: true
   priceKrw?: true
@@ -276,6 +294,9 @@ export type CarGroupByOutputType = {
   make: string
   model: string
   title: string
+  makeDisplay: string
+  modelDisplay: string
+  titleDisplay: string
   year: number
   mileageKm: number
   priceKrw: number
@@ -321,6 +342,9 @@ export type CarWhereInput = {
   make?: Prisma.StringFilter<"Car"> | string
   model?: Prisma.StringFilter<"Car"> | string
   title?: Prisma.StringFilter<"Car"> | string
+  makeDisplay?: Prisma.StringFilter<"Car"> | string
+  modelDisplay?: Prisma.StringFilter<"Car"> | string
+  titleDisplay?: Prisma.StringFilter<"Car"> | string
   year?: Prisma.IntFilter<"Car"> | number
   mileageKm?: Prisma.IntFilter<"Car"> | number
   priceKrw?: Prisma.IntFilter<"Car"> | number
@@ -343,6 +367,9 @@ export type CarOrderByWithRelationInput = {
   make?: Prisma.SortOrder
   model?: Prisma.SortOrder
   title?: Prisma.SortOrder
+  makeDisplay?: Prisma.SortOrder
+  modelDisplay?: Prisma.SortOrder
+  titleDisplay?: Prisma.SortOrder
   year?: Prisma.SortOrder
   mileageKm?: Prisma.SortOrder
   priceKrw?: Prisma.SortOrder
@@ -369,6 +396,9 @@ export type CarWhereUniqueInput = Prisma.AtLeast<{
   make?: Prisma.StringFilter<"Car"> | string
   model?: Prisma.StringFilter<"Car"> | string
   title?: Prisma.StringFilter<"Car"> | string
+  makeDisplay?: Prisma.StringFilter<"Car"> | string
+  modelDisplay?: Prisma.StringFilter<"Car"> | string
+  titleDisplay?: Prisma.StringFilter<"Car"> | string
   year?: Prisma.IntFilter<"Car"> | number
   mileageKm?: Prisma.IntFilter<"Car"> | number
   priceKrw?: Prisma.IntFilter<"Car"> | number
@@ -391,6 +421,9 @@ export type CarOrderByWithAggregationInput = {
   make?: Prisma.SortOrder
   model?: Prisma.SortOrder
   title?: Prisma.SortOrder
+  makeDisplay?: Prisma.SortOrder
+  modelDisplay?: Prisma.SortOrder
+  titleDisplay?: Prisma.SortOrder
   year?: Prisma.SortOrder
   mileageKm?: Prisma.SortOrder
   priceKrw?: Prisma.SortOrder
@@ -421,6 +454,9 @@ export type CarScalarWhereWithAggregatesInput = {
   make?: Prisma.StringWithAggregatesFilter<"Car"> | string
   model?: Prisma.StringWithAggregatesFilter<"Car"> | string
   title?: Prisma.StringWithAggregatesFilter<"Car"> | string
+  makeDisplay?: Prisma.StringWithAggregatesFilter<"Car"> | string
+  modelDisplay?: Prisma.StringWithAggregatesFilter<"Car"> | string
+  titleDisplay?: Prisma.StringWithAggregatesFilter<"Car"> | string
   year?: Prisma.IntWithAggregatesFilter<"Car"> | number
   mileageKm?: Prisma.IntWithAggregatesFilter<"Car"> | number
   priceKrw?: Prisma.IntWithAggregatesFilter<"Car"> | number
@@ -443,6 +479,9 @@ export type CarCreateInput = {
   make: string
   model: string
   title: string
+  makeDisplay?: string
+  modelDisplay?: string
+  titleDisplay?: string
   year: number
   mileageKm: number
   priceKrw: number
@@ -465,6 +504,9 @@ export type CarUncheckedCreateInput = {
   make: string
   model: string
   title: string
+  makeDisplay?: string
+  modelDisplay?: string
+  titleDisplay?: string
   year: number
   mileageKm: number
   priceKrw: number
@@ -487,6 +529,9 @@ export type CarUpdateInput = {
   make?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
+  makeDisplay?: Prisma.StringFieldUpdateOperationsInput | string
+  modelDisplay?: Prisma.StringFieldUpdateOperationsInput | string
+  titleDisplay?: Prisma.StringFieldUpdateOperationsInput | string
   year?: Prisma.IntFieldUpdateOperationsInput | number
   mileageKm?: Prisma.IntFieldUpdateOperationsInput | number
   priceKrw?: Prisma.IntFieldUpdateOperationsInput | number
@@ -509,6 +554,9 @@ export type CarUncheckedUpdateInput = {
   make?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
+  makeDisplay?: Prisma.StringFieldUpdateOperationsInput | string
+  modelDisplay?: Prisma.StringFieldUpdateOperationsInput | string
+  titleDisplay?: Prisma.StringFieldUpdateOperationsInput | string
   year?: Prisma.IntFieldUpdateOperationsInput | number
   mileageKm?: Prisma.IntFieldUpdateOperationsInput | number
   priceKrw?: Prisma.IntFieldUpdateOperationsInput | number
@@ -531,6 +579,9 @@ export type CarCreateManyInput = {
   make: string
   model: string
   title: string
+  makeDisplay?: string
+  modelDisplay?: string
+  titleDisplay?: string
   year: number
   mileageKm: number
   priceKrw: number
@@ -553,6 +604,9 @@ export type CarUpdateManyMutationInput = {
   make?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
+  makeDisplay?: Prisma.StringFieldUpdateOperationsInput | string
+  modelDisplay?: Prisma.StringFieldUpdateOperationsInput | string
+  titleDisplay?: Prisma.StringFieldUpdateOperationsInput | string
   year?: Prisma.IntFieldUpdateOperationsInput | number
   mileageKm?: Prisma.IntFieldUpdateOperationsInput | number
   priceKrw?: Prisma.IntFieldUpdateOperationsInput | number
@@ -575,6 +629,9 @@ export type CarUncheckedUpdateManyInput = {
   make?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
+  makeDisplay?: Prisma.StringFieldUpdateOperationsInput | string
+  modelDisplay?: Prisma.StringFieldUpdateOperationsInput | string
+  titleDisplay?: Prisma.StringFieldUpdateOperationsInput | string
   year?: Prisma.IntFieldUpdateOperationsInput | number
   mileageKm?: Prisma.IntFieldUpdateOperationsInput | number
   priceKrw?: Prisma.IntFieldUpdateOperationsInput | number
@@ -602,6 +659,9 @@ export type CarCountOrderByAggregateInput = {
   make?: Prisma.SortOrder
   model?: Prisma.SortOrder
   title?: Prisma.SortOrder
+  makeDisplay?: Prisma.SortOrder
+  modelDisplay?: Prisma.SortOrder
+  titleDisplay?: Prisma.SortOrder
   year?: Prisma.SortOrder
   mileageKm?: Prisma.SortOrder
   priceKrw?: Prisma.SortOrder
@@ -630,6 +690,9 @@ export type CarMaxOrderByAggregateInput = {
   make?: Prisma.SortOrder
   model?: Prisma.SortOrder
   title?: Prisma.SortOrder
+  makeDisplay?: Prisma.SortOrder
+  modelDisplay?: Prisma.SortOrder
+  titleDisplay?: Prisma.SortOrder
   year?: Prisma.SortOrder
   mileageKm?: Prisma.SortOrder
   priceKrw?: Prisma.SortOrder
@@ -651,6 +714,9 @@ export type CarMinOrderByAggregateInput = {
   make?: Prisma.SortOrder
   model?: Prisma.SortOrder
   title?: Prisma.SortOrder
+  makeDisplay?: Prisma.SortOrder
+  modelDisplay?: Prisma.SortOrder
+  titleDisplay?: Prisma.SortOrder
   year?: Prisma.SortOrder
   mileageKm?: Prisma.SortOrder
   priceKrw?: Prisma.SortOrder
@@ -704,6 +770,9 @@ export type CarSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = ru
   make?: boolean
   model?: boolean
   title?: boolean
+  makeDisplay?: boolean
+  modelDisplay?: boolean
+  titleDisplay?: boolean
   year?: boolean
   mileageKm?: boolean
   priceKrw?: boolean
@@ -726,6 +795,9 @@ export type CarSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extension
   make?: boolean
   model?: boolean
   title?: boolean
+  makeDisplay?: boolean
+  modelDisplay?: boolean
+  titleDisplay?: boolean
   year?: boolean
   mileageKm?: boolean
   priceKrw?: boolean
@@ -748,6 +820,9 @@ export type CarSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extension
   make?: boolean
   model?: boolean
   title?: boolean
+  makeDisplay?: boolean
+  modelDisplay?: boolean
+  titleDisplay?: boolean
   year?: boolean
   mileageKm?: boolean
   priceKrw?: boolean
@@ -770,6 +845,9 @@ export type CarSelectScalar = {
   make?: boolean
   model?: boolean
   title?: boolean
+  makeDisplay?: boolean
+  modelDisplay?: boolean
+  titleDisplay?: boolean
   year?: boolean
   mileageKm?: boolean
   priceKrw?: boolean
@@ -783,7 +861,7 @@ export type CarSelectScalar = {
   updatedAt?: boolean
 }
 
-export type CarOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "source" | "sourceId" | "sourceUrl" | "category" | "make" | "model" | "title" | "year" | "mileageKm" | "priceKrw" | "currency" | "photoUrl" | "isActive" | "firstSeenAt" | "lastSeenAt" | "raw" | "createdAt" | "updatedAt", ExtArgs["result"]["car"]>
+export type CarOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "source" | "sourceId" | "sourceUrl" | "category" | "make" | "model" | "title" | "makeDisplay" | "modelDisplay" | "titleDisplay" | "year" | "mileageKm" | "priceKrw" | "currency" | "photoUrl" | "isActive" | "firstSeenAt" | "lastSeenAt" | "raw" | "createdAt" | "updatedAt", ExtArgs["result"]["car"]>
 
 export type $CarPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Car"
@@ -797,6 +875,9 @@ export type $CarPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     make: string
     model: string
     title: string
+    makeDisplay: string
+    modelDisplay: string
+    titleDisplay: string
     year: number
     mileageKm: number
     priceKrw: number
@@ -1239,6 +1320,9 @@ export interface CarFieldRefs {
   readonly make: Prisma.FieldRef<"Car", 'String'>
   readonly model: Prisma.FieldRef<"Car", 'String'>
   readonly title: Prisma.FieldRef<"Car", 'String'>
+  readonly makeDisplay: Prisma.FieldRef<"Car", 'String'>
+  readonly modelDisplay: Prisma.FieldRef<"Car", 'String'>
+  readonly titleDisplay: Prisma.FieldRef<"Car", 'String'>
   readonly year: Prisma.FieldRef<"Car", 'Int'>
   readonly mileageKm: Prisma.FieldRef<"Car", 'Int'>
   readonly priceKrw: Prisma.FieldRef<"Car", 'Int'>

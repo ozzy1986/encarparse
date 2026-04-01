@@ -1,7 +1,5 @@
 import { unstable_noStore as noStore } from "next/cache";
 
-import { normalizeVehicleLabels } from "@/lib/encar/english";
-
 import { getDb } from "../db";
 
 export interface HomePageCar {
@@ -39,6 +37,8 @@ export interface HomePageSelectedFilters {
   model: string;
   yearFrom: string;
   yearTo: string;
+  page: string;
+  pageSize: string;
 }
 
 export interface HomePageData {
@@ -49,20 +49,9 @@ export interface HomePageData {
   filters: HomePageFilters;
   matchingCount: number;
   selectedFilters: HomePageSelectedFilters;
-}
-
-interface ActiveCarRow {
-  id: string;
-  category: string | null;
-  make: string;
-  model: string;
-  title: string;
-  year: number;
-  mileageKm: number;
-  priceKrw: number;
-  photoUrl: string | null;
-  sourceUrl: string;
-  lastSeenAt: Date;
+  page: number;
+  pageSize: number;
+  pageCount: number;
 }
 
 function normalizeFilterValue(value?: string) {
@@ -79,70 +68,62 @@ function normalizeYearValue(value?: string, years?: number[]) {
   return Number.isFinite(parsed) && years?.includes(parsed) ? String(parsed) : "";
 }
 
+function parsePositiveInt(value: string, fallback: number) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  const asInt = Math.floor(parsed);
+  return asInt > 0 ? asInt : fallback;
+}
+
 export async function getHomepageData(
   requestedFilters: Partial<HomePageSelectedFilters> = {},
 ): Promise<HomePageData> {
   noStore();
 
   const db = getDb();
-  const [rawCars, lastRun] = await Promise.all([
+  const [brandsDistinct, modelsDistinct, yearsDistinct, makeCountsRaw, lastRun, totalCars] = await Promise.all([
+    db.car.findMany({
+      where: { isActive: true, makeDisplay: { not: "" } },
+      distinct: ["makeDisplay"],
+      select: { makeDisplay: true },
+    }),
+    db.car.findMany({
+      where: { isActive: true, makeDisplay: { not: "" }, modelDisplay: { not: "" } },
+      distinct: ["makeDisplay", "modelDisplay"],
+      select: { makeDisplay: true, modelDisplay: true },
+    }),
     db.car.findMany({
       where: { isActive: true },
-      orderBy: [{ lastSeenAt: "desc" }, { year: "desc" }],
-      select: {
-        id: true,
-        category: true,
-        make: true,
-        model: true,
-        title: true,
-        year: true,
-        mileageKm: true,
-        priceKrw: true,
-        photoUrl: true,
-        sourceUrl: true,
-        lastSeenAt: true,
-      },
+      distinct: ["year"],
+      select: { year: true },
+    }),
+    db.car.groupBy({
+      by: ["makeDisplay"],
+      where: { isActive: true, makeDisplay: { not: "" } },
+      _count: { makeDisplay: true },
+      orderBy: [{ _count: { makeDisplay: "desc" } }, { makeDisplay: "asc" }],
     }),
     db.scrapeRun.findFirst({
       where: { source: "encar", status: "SUCCEEDED" },
       orderBy: { finishedAt: "desc" },
       select: { finishedAt: true },
     }),
+    db.car.count({ where: { isActive: true } }),
   ]);
 
-  const normalizedCars: Array<HomePageCar & { lastSeenAt: Date }> = rawCars.map((car: ActiveCarRow) => {
-    const normalized = normalizeVehicleLabels({
-      make: car.make,
-      model: car.model,
-      title: car.title,
-    });
-
-    return {
-      id: car.id,
-      category: car.category,
-      make: normalized.displayMake,
-      model: normalized.displayModel || normalized.displayTitle.replace(`${normalized.displayMake} `, ""),
-      title: normalized.displayTitle,
-      year: car.year,
-      mileageKm: car.mileageKm,
-      priceKrw: car.priceKrw,
-      photoUrl: car.photoUrl,
-      sourceUrl: car.sourceUrl,
-      lastSeenAt: car.lastSeenAt,
-    };
-  });
-
-  const makeCountMap = new Map<string, number>();
   const modelsByBrandMap = new Map<string, Set<string>>();
-  const yearSet = new Set<number>();
-
-  for (const car of normalizedCars) {
-    makeCountMap.set(car.make, (makeCountMap.get(car.make) ?? 0) + 1);
-    yearSet.add(car.year);
-    if (!modelsByBrandMap.has(car.make)) {
-      modelsByBrandMap.set(car.make, new Set());
+  for (const row of modelsDistinct) {
+    const make = row.makeDisplay;
+    const model = row.modelDisplay;
+    if (!make || !model) {
+      continue;
     }
-    modelsByBrandMap.get(car.make)?.add(car.model);
+    if (!modelsByBrandMap.has(make)) {
+      modelsByBrandMap.set(make, new Set());
+    }
+    modelsByBrandMap.get(make)?.add(model);
   }
 
   const modelsByBrand = Object.fromEntries(
@@ -152,8 +133,15 @@ export async function getHomepageData(
     ]),
   );
 
-  const availableBrands = Object.keys(modelsByBrand).sort((left, right) => left.localeCompare(right));
-  const availableYears = Array.from(yearSet).sort((left, right) => right - left);
+  const availableBrands = brandsDistinct
+    .map((row) => row.makeDisplay)
+    .filter(Boolean)
+    .sort((left, right) => left.localeCompare(right));
+
+  const availableYears = yearsDistinct
+    .map((row) => row.year)
+    .filter((year): year is number => typeof year === "number" && Number.isFinite(year))
+    .sort((left, right) => right - left);
 
   const brand = availableBrands.includes(normalizeFilterValue(requestedFilters.brand))
     ? normalizeFilterValue(requestedFilters.brand)
@@ -164,34 +152,67 @@ export async function getHomepageData(
   const yearFrom = normalizeYearValue(requestedFilters.yearFrom, availableYears);
   const yearTo = normalizeYearValue(requestedFilters.yearTo, availableYears);
 
-  const matchingCars = normalizedCars.filter((car) => {
-    if (brand && car.make !== brand) {
-      return false;
-    }
-    if (model && car.model !== model) {
-      return false;
-    }
-    if (yearFrom && car.year < Number(yearFrom)) {
-      return false;
-    }
-    if (yearTo && car.year > Number(yearTo)) {
-      return false;
-    }
-    return true;
-  });
+  const page = String(requestedFilters.page ?? "").trim();
+  const pageSize = String(requestedFilters.pageSize ?? "").trim();
+  const parsedPage = parsePositiveInt(page, 1);
+  const parsedPageSize = Math.min(parsePositiveInt(pageSize, 24), 60);
+  const skip = (parsedPage - 1) * parsedPageSize;
 
-  const makeCounts = Array.from(makeCountMap.entries())
-    .map(([make, count]) => ({ make, count }))
-    .sort((left, right) => right.count - left.count || left.make.localeCompare(right.make))
-    .slice(0, 18);
+  const where = {
+    isActive: true,
+    ...(brand ? { makeDisplay: brand } : {}),
+    ...(model ? { modelDisplay: model } : {}),
+    ...(yearFrom || yearTo
+      ? {
+          year: {
+            ...(yearFrom ? { gte: Number(yearFrom) } : {}),
+            ...(yearTo ? { lte: Number(yearTo) } : {}),
+          },
+        }
+      : {}),
+  };
+
+  const [matchingCount, cars] = await Promise.all([
+    db.car.count({ where }),
+    db.car.findMany({
+      where,
+      orderBy: [{ lastSeenAt: "desc" }, { year: "desc" }],
+      skip,
+      take: parsedPageSize,
+      select: {
+        id: true,
+        category: true,
+        make: true,
+        model: true,
+        title: true,
+        makeDisplay: true,
+        modelDisplay: true,
+        titleDisplay: true,
+        year: true,
+        mileageKm: true,
+        priceKrw: true,
+        photoUrl: true,
+        sourceUrl: true,
+      },
+    }),
+  ]);
+
+  const makeCounts = makeCountsRaw
+    .map((row) => ({
+      make: row.makeDisplay,
+      count: row._count.makeDisplay,
+    }))
+    .filter((row) => row.make && row.make !== "Other");
+
+  const pageCount = Math.max(1, Math.ceil(matchingCount / parsedPageSize));
 
   return {
-    cars: matchingCars.slice(0, 24).map((car) => ({
+    cars: cars.map((car) => ({
       id: car.id,
       category: car.category,
-      make: car.make,
-      model: car.model,
-      title: car.title,
+      make: car.makeDisplay || car.make,
+      model: car.modelDisplay || car.model,
+      title: car.titleDisplay || car.title,
       year: car.year,
       mileageKm: car.mileageKm,
       priceKrw: car.priceKrw,
@@ -200,8 +221,8 @@ export async function getHomepageData(
     })),
     featuredMakes: makeCounts.slice(0, 5).map((item) => item.make),
     stats: {
-      totalCars: normalizedCars.length,
-      brandCount: makeCountMap.size,
+      totalCars,
+      brandCount: availableBrands.length,
       lastSyncedAt: lastRun?.finishedAt ?? null,
     },
     makeCounts,
@@ -210,12 +231,17 @@ export async function getHomepageData(
       modelsByBrand,
       years: availableYears,
     },
-    matchingCount: matchingCars.length,
+    matchingCount,
     selectedFilters: {
       brand,
       model,
       yearFrom,
       yearTo,
+      page: String(parsedPage),
+      pageSize: String(parsedPageSize),
     },
+    page: parsedPage,
+    pageSize: parsedPageSize,
+    pageCount,
   };
 }

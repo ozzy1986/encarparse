@@ -28,17 +28,17 @@ function parseNumberArg(flag: string) {
 
 async function main() {
   const categories = parseListArg("--categories") as EncarCategoryId[] | undefined;
-  const headless = !process.argv.includes("--headful");
   const debug = process.argv.includes("--debug");
   const maxPagesPerCategory = parseNumberArg("--max-pages");
   const limitPerPage = parseNumberArg("--limit");
+  const fullRefresh = process.argv.includes("--full-refresh") || process.env.SCRAPE_FULL_REFRESH === "true";
 
   const summary = await syncEncarListings({
     categories,
-    headless,
     debug,
     maxPagesPerCategory,
     limitPerPage,
+    fullRefresh,
   });
 
   console.info("ENCAR sync completed.");

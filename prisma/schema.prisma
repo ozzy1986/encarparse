@@ -22,6 +22,9 @@ model Car {
   make          String
   model         String
   title         String
+  makeDisplay   String   @default("")
+  modelDisplay  String   @default("")
+  titleDisplay  String   @default("")
   year          Int
   mileageKm     Int
   priceKrw      Int
@@ -37,6 +40,7 @@ model Car {
   @@unique([source, sourceId])
   @@index([isActive, lastSeenAt])
   @@index([make, model])
+  @@index([makeDisplay, modelDisplay])
   @@index([year])
   @@index([priceKrw])
 }
